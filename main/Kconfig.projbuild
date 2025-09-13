@@ -1,0 +1,75 @@
+menu "reTerminal E1002 Configuration"
+
+    config EPAPER_MOSI_GPIO
+        int "E-Paper MOSI GPIO number"
+        range 0 48
+        default 9
+        help
+            GPIO number (IOxx) for E-Paper MOSI/DIN signal.
+
+    config EPAPER_SCLK_GPIO
+        int "E-Paper SCLK GPIO number"
+        range 0 48
+        default 8
+        help
+            GPIO number (IOxx) for E-Paper SCLK/CLK signal.
+
+    config EPAPER_CS_GPIO
+        int "E-Paper CS GPIO number"
+        range 0 48
+        default 7
+        help
+            GPIO number (IOxx) for E-Paper CS (Chip Select) signal.
+
+    config EPAPER_DC_GPIO
+        int "E-Paper DC GPIO number"
+        range 0 48
+        default 6
+        help
+            GPIO number (IOxx) for E-Paper DC (Data/Command) signal.
+
+    config EPAPER_RST_GPIO
+        int "E-Paper RST GPIO number"
+        range 0 48
+        default 5
+        help
+            GPIO number (IOxx) for E-Paper RST (Reset) signal.
+
+    config EPAPER_BUSY_GPIO
+        int "E-Paper BUSY GPIO number"
+        range 0 48
+        default 4
+        help
+            GPIO number (IOxx) for E-Paper BUSY signal.
+
+    config EPAPER_WIDTH
+        int "E-Paper display width"
+        default 800
+        help
+            Width of the e-paper display in pixels.
+
+    config EPAPER_HEIGHT
+        int "E-Paper display height"
+        default 480
+        help
+            Height of the e-paper display in pixels.
+
+    config ENABLE_PARTIAL_UPDATE
+        bool "Enable partial update support"
+        default y
+        help
+            Enable partial update feature for faster screen updates.
+
+    config ENABLE_SD_CARD
+        bool "Enable SD Card support"
+        default y
+        help
+            Enable SD Card support for storing images and configurations.
+
+    config ENABLE_WIFI
+        bool "Enable WiFi support"
+        default y
+        help
+            Enable WiFi connectivity features.
+
+endmenu
