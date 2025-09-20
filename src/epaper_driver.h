@@ -58,4 +58,12 @@ esp_err_t epaper_wait_busy(epaper_handle_t *handle, uint32_t timeout_ms);
 esp_err_t epaper_set_pixel(uint8_t *buffer, uint16_t x, uint16_t y,
                            epaper_color_t color, uint16_t width, uint16_t height);
 
+esp_err_t epaper_refresh(epaper_handle_t *handle, bool partial_update);
+
+esp_err_t epaper_fill_screen(epaper_handle_t *handle, epaper_color_t color);
+
+esp_err_t epaper_display(epaper_handle_t *handle);
+
+esp_err_t epaper_display_partial(epaper_handle_t *handle, bool partial_update);
+
 #endif

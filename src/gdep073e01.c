@@ -3,7 +3,7 @@
 
 static const char *TAG = "GDEP073E01";
 
-static const uint8_t gdep073e01_init_sequence[] = {
+__attribute__((unused)) static const uint8_t gdep073e01_init_sequence[] = {
     0x00, 0x0F,
     0x61, 0x03, 0x20, 0x01, 0xE0,
     0x15, 0x00,
