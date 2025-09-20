@@ -1,5 +1,6 @@
 #include "epaper_driver.h"
 #include "esp_log.h"
+#include <string.h>
 
 static const char *TAG = "GDEP073E01";
 
@@ -19,4 +20,15 @@ esp_err_t gdep073e01_init_specific(epaper_handle_t *handle)
     handle->height = 480;
 
     return ESP_OK;
+}
+
+esp_err_t gdep073e01_clear_white(epaper_handle_t *handle)
+{
+    if (handle == NULL) {
+        return EPAPER_ERR_INVALID_PARAM;
+    }
+
+    ESP_LOGI(TAG, "Clearing display to white...");
+
+    return epaper_clear(handle, EPAPER_COLOR_WHITE);
 }

@@ -19,12 +19,20 @@ typedef struct {
 typedef enum {
     EPAPER_COLOR_BLACK = 0x00,
     EPAPER_COLOR_WHITE = 0x01,
-    EPAPER_COLOR_RED = 0x02,
-    EPAPER_COLOR_GREEN = 0x03,
-    EPAPER_COLOR_BLUE = 0x04,
-    EPAPER_COLOR_YELLOW = 0x05,
-    EPAPER_COLOR_ORANGE = 0x06
+    EPAPER_COLOR_YELLOW = 0x02,
+    EPAPER_COLOR_RED = 0x03,
+    EPAPER_COLOR_BLUE = 0x05,
+    EPAPER_COLOR_GREEN = 0x06,
+    EPAPER_COLOR_CLEAN = 0x07
 } epaper_color_t;
+
+#define Black   0x00
+#define White   0x11
+#define Green   0x66
+#define Blue    0x55
+#define Red     0x33
+#define Yellow  0x22
+#define Clean   0x77
 
 typedef enum {
     EPAPER_OK = 0,
@@ -37,6 +45,8 @@ typedef enum {
 } epaper_error_t;
 
 esp_err_t epaper_init(epaper_handle_t *handle);
+
+esp_err_t epaper_init_fast(epaper_handle_t *handle);
 
 esp_err_t epaper_deinit(epaper_handle_t *handle);
 

@@ -365,7 +365,6 @@ static uint8_t color7(epaper_color_t color)
         case EPAPER_COLOR_BLUE:   return 0x03;
         case EPAPER_COLOR_RED:    return 0x04;
         case EPAPER_COLOR_YELLOW: return 0x05;
-        case EPAPER_COLOR_ORANGE: return 0x06;
         default: return 0x01;
     }
 }
