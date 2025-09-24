@@ -4,8 +4,14 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "esp_log.h"
+#include "logger.h"
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_FILE_SIZE 4096
 
 static const char *TAG = "SDIO";
+sdio_context_t sdio_ctx = {.card = NULL, .is_mounted = false};
 static sdmmc_card_t *card = NULL;
 
 esp_err_t init_sd_card(void)
@@ -56,6 +62,67 @@ esp_err_t init_sd_card(void)
     ESP_LOGI(TAG, "SD card mounted successfully");
 
     sdmmc_card_print_info(stdout, card);
+
+    return ESP_OK;
+}
+
+esp_err_t sdio_init(sdio_context_t *ctx) {
+    if (ctx == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ctx->card = NULL;
+    ctx->is_mounted = false;
+    return ESP_OK;
+}
+
+esp_err_t sdio_deinit(sdio_context_t *ctx) {
+    if (ctx == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (ctx->is_mounted) {
+        sdio_unmount(ctx);
+    }
+    return ESP_OK;
+}
+
+esp_err_t sdio_mount(sdio_context_t *ctx) {
+    if (ctx == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return init_sd_card();
+}
+
+esp_err_t sdio_unmount(sdio_context_t *ctx) {
+    if (ctx == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return deinit_sd_card();
+}
+
+esp_err_t sdio_read_file(sdio_context_t *ctx, const char *filename, char *buffer, size_t buffer_size) {
+    if (ctx == NULL || filename == NULL || buffer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    char filepath[128];
+    snprintf(filepath, sizeof(filepath), "%s/%s", MOUNT_POINT, filename);
+
+    log_info(TAG, "Reading file: %s", filepath);
+
+    FILE *f = fopen(filepath, "r");
+    if (f == NULL) {
+        log_error(TAG, "Failed to open file for reading: %s", filepath);
+        return ESP_FAIL;
+    }
+
+    size_t bytes_read = fread(buffer, 1, buffer_size - 1, f);
+    buffer[bytes_read] = '\0';
+
+    fclose(f);
+
+    log_info(TAG, "Read %d bytes from %s", bytes_read, filename);
 
     return ESP_OK;
 }
