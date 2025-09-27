@@ -157,10 +157,215 @@ reTerminal/
 └── README.md              # このファイル
 ```
 
+## HTTPサーバー機能
+
+WiFi接続後、ESP32-S3上でHTTPサーバーが自動起動し、SDカード上のファイルをWebブラウザから操作できます。
+
+### アクセス方法
+
+1. シリアルモニターでESP32のIPアドレスを確認
+```
+Access the server at: http://192.168.1.xxx
+```
+
+2. ブラウザで上記URLにアクセス
+
+### 利用可能なHTTP機能
+
+#### 📁 ファイルブラウジング
+- **URL**: `http://ESP32_IP/`
+- **機能**: SDカード上のファイル・ディレクトリ一覧をJSON形式で表示
+- **メソッド**: GET
+- **レスポンス**:
+```json
+{
+  "files": [
+    {"name": "test.bmp", "size": 1440054, "isDir": false, "modified": 1695523200},
+    {"name": "images", "size": 0, "isDir": true, "modified": 1695523100}
+  ],
+  "path": "/"
+}
+```
+
+#### 📥 ファイルダウンロード
+- **URL**: `http://ESP32_IP/path/to/file.ext`
+- **機能**: SDカード上の任意のファイルをダウンロード
+- **メソッド**: GET
+- **対応形式**: HTML, CSS, JS, 画像(PNG/JPG/GIF), PDF, テキストファイル等
+- **例**: `http://192.168.1.100/test.bmp` でtest.bmpファイルをダウンロード
+
+#### 📤 ファイルアップロード
+- **URL**: `http://ESP32_IP/path/to/upload/file.ext`
+- **機能**: SDカードに任意のファイルをアップロード
+- **メソッド**: POST
+- **制限**: 最大ファイルサイズ 5MB
+- **例**: `curl -X POST -T myfile.txt http://192.168.1.100/uploaded_file.txt`
+
+#### 🗑️ ファイル削除
+- **URL**: `http://ESP32_IP/path/to/file.ext`
+- **機能**: SDカード上のファイルを削除
+- **メソッド**: DELETE
+- **例**: `curl -X DELETE http://192.168.1.100/old_file.txt`
+
+#### 🖼️ e-Paper表示更新
+- **URL**: `http://ESP32_IP/api/update`
+- **機能**: SDカードの`test.bmp`をe-Paperディスプレイに表示
+- **メソッド**: POST
+- **例**: `curl -X POST http://192.168.1.100/api/update`
+- **レスポンス**: `{"status":"success","message":"Image displayed successfully"}`
+
+### セキュリティ機能
+
+- **パストラバーサル対策**: `../`を含むパスは拒否
+- **ファイルサイズ制限**: アップロードは5MBまで
+- **パス長制限**: 最大1024文字まで
+
+### 技術仕様
+
+- **ポート**: 80 (HTTP)
+- **最大同時接続数**: 5
+- **対応メソッド**: GET, POST, DELETE
+- **MIME自動判定**: ファイル拡張子に基づく適切なContent-Type設定
+- **チャンク転送**: 大きなファイルの効率的な転送
+
+### 使用例
+
+#### cURLでの操作例
+```bash
+# ファイル一覧取得
+curl http://192.168.1.100/
+
+# ファイルダウンロード
+curl -O http://192.168.1.100/test.bmp
+
+# ファイルアップロード
+curl -X POST -T localfile.txt http://192.168.1.100/remotefile.txt
+
+# ファイル削除
+curl -X DELETE http://192.168.1.100/unwanted.txt
+
+# e-Paper表示更新
+curl -X POST http://192.168.1.100/api/update
+```
+
+#### Webブラウザでの利用
+- ブラウザで `http://ESP32_IP/` にアクセス
+- JSONファイル一覧から目的のファイルURLを確認
+- `http://ESP32_IP/filename.ext` で直接ファイルアクセス
+
+## WiFi設定
+
+### SDカード上のConfigファイル
+
+WiFi接続とIP設定は、SDカード上の `config` ファイルで設定します。
+
+#### 設定ファイルの場所
+```
+/sdcard/config
+```
+
+#### 設定項目
+
+| 項目 | 説明 | 必須 | デフォルト値 |
+|------|------|------|-------------|
+| `SSID` | WiFiネットワーク名 | ✅ | - |
+| `PASSWORD` | WiFiパスワード | ✅ | - |
+| `IP_MODE` | IP取得方式（`dhcp` または `static`） | ❌ | `dhcp` |
+| `STATIC_IP` | 固定IPアドレス | ※ | - |
+| `STATIC_NETMASK` | サブネットマスク | ※ | - |
+| `STATIC_GATEWAY` | ゲートウェイアドレス | ※ | - |
+| `STATIC_DNS` | DNSサーバーアドレス | ❌ | - |
+| `HIDDEN_SSID` | 隠されたSSID（`true`/`false`） | ❌ | `false` |
+| `BSSID` | 特定のアクセスポイント指定 | ❌ | - |
+
+※ `IP_MODE=static` の場合は必須
+
+#### 設定例
+
+**DHCP使用（推奨）**:
+```ini
+SSID=MyWiFiNetwork
+PASSWORD=MySecurePassword
+IP_MODE=dhcp
+```
+
+**固定IP使用**:
+```ini
+SSID=MyWiFiNetwork
+PASSWORD=MySecurePassword
+IP_MODE=static
+STATIC_IP=192.168.1.100
+STATIC_NETMASK=255.255.255.0
+STATIC_GATEWAY=192.168.1.1
+STATIC_DNS=8.8.8.8
+```
+
+**隠しSSID with 固定IP**:
+```ini
+SSID=HiddenNetwork
+PASSWORD=HiddenPassword
+HIDDEN_SSID=true
+IP_MODE=static
+STATIC_IP=10.0.1.50
+STATIC_NETMASK=255.255.255.0
+STATIC_GATEWAY=10.0.1.1
+STATIC_DNS=1.1.1.1
+```
+
+### WiFi接続の確認
+
+シリアルモニターで接続状況を確認できます：
+
+```
+I (3456) WIFI: Connected to AP successfully
+I (3467) WIFI: Static IP configured: 192.168.1.100, Netmask: 255.255.255.0, Gateway: 192.168.1.1
+I (3478) MAIN: IP Address: 192.168.1.100
+I (3489) MAIN: Access the server at: http://192.168.1.100
+```
+
+### トラブルシューティング
+
+#### WiFi接続に失敗する場合
+
+1. **設定ファイルの確認**
+   - SDカードに `config` ファイルが存在するか
+   - ファイル内容に構文エラーがないか
+   - SSIDとパスワードが正しいか
+
+2. **固定IP設定の確認**
+   - IPアドレスがネットワーク範囲内にあるか
+   - 他のデバイスと重複していないか
+   - ゲートウェイアドレスが正しいか
+
+3. **シリアルモニターでエラー確認**
+   ```bash
+   idf.py monitor
+   ```
+
+#### よくあるエラーと対処法
+
+| エラーメッセージ | 原因 | 対処法 |
+|-----------------|------|--------|
+| `Failed to read config file` | SDカードまたはconfigファイルが見つからない | SDカードの挿入とファイル存在確認 |
+| `Failed to parse config file` | 設定ファイルの書式エラー | ファイル内容の確認・修正 |
+| `Static IP is required when IP_MODE is static` | 固定IP設定が不完全 | STATIC_IP, STATIC_NETMASK, STATIC_GATEWAYを設定 |
+| `Failed to connect to AP` | WiFi認証失敗 | SSIDとパスワードの確認 |
+
+## SDカード要件
+
+- **対応形式**: FAT32ファイルシステム
+- **容量**: 32GBまで推奨
+- **接続**: SPI経由（MISO:8, MOSI:9, CLK:7, CS:14）
+- **必須ファイル**: `/config` （WiFi設定ファイル）
+
 ## 開発状況
 
 - [x] プロジェクト初期構築
 - [x] E-Paperドライバ基本実装
+- [x] WiFi接続機能
+- [x] WiFi DHCP/固定IP対応 🆕
+- [x] SDカード読み書き機能
+- [x] HTTPサーバー機能
 - [ ] Display HAL実装
 - [ ] UI Manager実装
 - [ ] 実機動作確認

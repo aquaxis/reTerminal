@@ -7,6 +7,8 @@
 #include "logger.h"
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #define MAX_FILE_SIZE 4096
 
@@ -142,4 +144,37 @@ esp_err_t deinit_sd_card(void)
 
     ESP_LOGI(TAG, "SD card unmounted successfully");
     return ESP_OK;
+}
+
+esp_err_t sdio_get_info(sd_card_info_t *info) {
+    if (!sdio_ctx.is_mounted || !card) {
+        ESP_LOGE(TAG, "SD card not mounted");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    FATFS *fs;
+    DWORD fre_clust, fre_sect, tot_sect;
+
+    if (f_getfree(MOUNT_POINT, &fre_clust, &fs) != FR_OK) {
+        ESP_LOGE(TAG, "Failed to get SD card info");
+        return ESP_FAIL;
+    }
+
+    tot_sect = (fs->n_fatent - 2) * fs->csize;
+    fre_sect = fre_clust * fs->csize;
+
+    info->total_bytes = tot_sect * FF_SS_SDCARD;
+    info->free_bytes = fre_sect * FF_SS_SDCARD;
+    info->used_bytes = info->total_bytes - info->free_bytes;
+
+    ESP_LOGI(TAG, "SD Card Info - Total: %zu KB, Used: %zu KB, Free: %zu KB",
+             info->total_bytes / 1024,
+             info->used_bytes / 1024,
+             info->free_bytes / 1024);
+
+    return ESP_OK;
+}
+
+bool sdio_is_mounted(void) {
+    return sdio_ctx.is_mounted;
 }

@@ -11,6 +11,7 @@
 #include "logger.h"
 #include "config_parser.h"
 #include "wifi_manager.h"
+#include "http_server.h"
 
 static const char *TAG = "MAIN";
 
@@ -82,9 +83,6 @@ void app_main(void)
         return;
     }
 
-//    sdio_unmount(&sdio_ctx);
-//    sdio_deinit(&sdio_ctx);
-
     ret = wifi_manager_init();
     if (ret != ESP_OK) {
         log_error(TAG, "Failed to initialize WiFi");
@@ -110,8 +108,15 @@ void app_main(void)
         log_info(TAG, "Gateway: %s", gateway_str);
     }
 
+    ESP_LOGI(TAG, "Starting HTTP server...");
+    ret = http_server_start();
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP server started successfully");
+        ESP_LOGI(TAG, "Access the server at: http://%s", ip_str);
+    } else {
+        ESP_LOGE(TAG, "Failed to start HTTP server: %s", esp_err_to_name(ret));
+    }
 
-#if 1
     ESP_LOGI(TAG, "Loading BMP image from SD card...");
     bmp_image_t image;
     ret = load_bmp_from_sd("/sdcard/test.bmp", &image);
@@ -121,51 +126,8 @@ void app_main(void)
         ESP_LOGE(TAG, "Failed to load BMP image, using test pattern");
     }
 
-/*
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "BMP image loaded successfully");
-
-        uint8_t *epaper_buffer = malloc(800 * 480);
-        if (epaper_buffer) {
-            ret = convert_bmp_to_epaper(&image, epaper_buffer);
-            if (ret == ESP_OK) {
-                ESP_LOGI(TAG, "Displaying image on e-Paper...");
-                ret = epaper_display_frame(&epaper, epaper_buffer);
-                if (ret == ESP_OK) {
-                    ESP_LOGI(TAG, "Image displayed successfully");
-                } else {
-                    ESP_LOGE(TAG, "Failed to display image");
-                }
-            }
-            free(epaper_buffer);
-        } else {
-            ESP_LOGE(TAG, "Failed to allocate e-Paper buffer");
-        }
-
-        free_bmp_image(&image);
-    } else {
-        ESP_LOGE(TAG, "Failed to load BMP image, using test pattern");
-
-        uint8_t *test_buffer = malloc(800 * 480);
-        if (test_buffer) {
-            memset(test_buffer, EPAPER_COLOR_WHITE, 800 * 480);
-
-            for (int y = 100; y < 200; y++) {
-                for (int x = 100; x < 200; x++) {
-                    test_buffer[y * 800 + x] = EPAPER_COLOR_BLACK;
-                }
-            }
-
-            ESP_LOGI(TAG, "Displaying test pattern...");
-            ret = epaper_display_frame(&epaper, test_buffer);
-            if (ret == ESP_OK) {
-                ESP_LOGI(TAG, "Test pattern displayed successfully");
-            }
-            free(test_buffer);
-        }
-    }
-*/
-#endif
+    sdio_unmount(&sdio_ctx);
+    sdio_deinit(&sdio_ctx);
 
     // ----------
     // e-Paper
@@ -187,12 +149,6 @@ void app_main(void)
         return;
     }
 
-    ESP_LOGI(TAG, "Clearing e-Paper display...");
-    ret = epaper_clear(&epaper, 0x00);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "e-Paper clear failed");
-    }
-
     ESP_LOGI(TAG, "Displaying image on e-Paper...");
     ret = epaper_display_frame(&epaper, image.data);
     if (ret == ESP_OK) {
@@ -201,25 +157,8 @@ void app_main(void)
         ESP_LOGE(TAG, "Failed to display image");
     }
 
-/*
-    uint8_t *test_buffer = malloc(800 * 480 / 2);
-    if (test_buffer) {
-        memset(test_buffer, 0x11, 800 * 480 / 2);
+    epaper_deinit(&epaper);
 
-        for (int y = 100; y < 200; y++) {
-            for (int x = 100; x < 200; x++) {
-                test_buffer[y * 800 + x] = 0x00;
-            }
-        }
-
-        ESP_LOGI(TAG, "Displaying test pattern...");
-        ret = epaper_display_frame(&epaper, test_buffer);
-        if (ret == ESP_OK) {
-            ESP_LOGI(TAG, "Test pattern displayed successfully");
-        }
-        free(test_buffer);
-    }
-*/
     while (1) {
         wifi_status_t status = wifi_manager_get_status();
         if (status == WIFI_STATUS_CONNECTED) {
@@ -233,11 +172,9 @@ void app_main(void)
         }
 
         gpio_set_level(GPIO_NUM_6, 1);
-        ESP_LOGI(TAG, "LED ON - System running with e-Paper display...");
         vTaskDelay(500 / portTICK_PERIOD_MS);
 
         gpio_set_level(GPIO_NUM_6, 0);
-        ESP_LOGI(TAG, "LED OFF");
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }

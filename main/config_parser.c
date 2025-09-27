@@ -51,6 +51,7 @@ esp_err_t config_parse_file(const char *content, wifi_config_data_t *config) {
 
     memset(config, 0, sizeof(wifi_config_data_t));
     config->is_valid = false;
+    config->ip_mode = IP_MODE_DHCP; // デフォルトはDHCP
 
     char *content_copy = strdup(content);
     if (content_copy == NULL) {
@@ -86,6 +87,26 @@ esp_err_t config_parse_file(const char *content, wifi_config_data_t *config) {
                 strncpy(config->bssid, value, sizeof(config->bssid) - 1);
                 config->use_bssid = true;
                 log_info(TAG, "Found BSSID: %s", config->bssid);
+            } else if (strcasecmp(key, "IP_MODE") == 0) {
+                if (strcasecmp(value, "static") == 0) {
+                    config->ip_mode = IP_MODE_STATIC;
+                    log_info(TAG, "IP mode: Static");
+                } else {
+                    config->ip_mode = IP_MODE_DHCP;
+                    log_info(TAG, "IP mode: DHCP");
+                }
+            } else if (strcasecmp(key, "STATIC_IP") == 0) {
+                strncpy(config->static_ip, value, MAX_IP_LEN - 1);
+                log_info(TAG, "Static IP: %s", config->static_ip);
+            } else if (strcasecmp(key, "STATIC_NETMASK") == 0) {
+                strncpy(config->static_netmask, value, MAX_IP_LEN - 1);
+                log_info(TAG, "Static Netmask: %s", config->static_netmask);
+            } else if (strcasecmp(key, "STATIC_GATEWAY") == 0) {
+                strncpy(config->static_gateway, value, MAX_IP_LEN - 1);
+                log_info(TAG, "Static Gateway: %s", config->static_gateway);
+            } else if (strcasecmp(key, "STATIC_DNS") == 0) {
+                strncpy(config->static_dns, value, MAX_IP_LEN - 1);
+                log_info(TAG, "Static DNS: %s", config->static_dns);
             }
         }
 
@@ -137,6 +158,22 @@ esp_err_t config_validate(const wifi_config_data_t *config) {
     if (strlen(config->password) > 64) {
         log_error(TAG, "Password is too long");
         return ESP_ERR_INVALID_SIZE;
+    }
+
+    // 固定IP設定の検証
+    if (config->ip_mode == IP_MODE_STATIC) {
+        if (strlen(config->static_ip) == 0) {
+            log_error(TAG, "Static IP is required when IP_MODE is static");
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (strlen(config->static_netmask) == 0) {
+            log_error(TAG, "Static netmask is required when IP_MODE is static");
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (strlen(config->static_gateway) == 0) {
+            log_error(TAG, "Static gateway is required when IP_MODE is static");
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 
     log_info(TAG, "Configuration validated successfully");

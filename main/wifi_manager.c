@@ -12,6 +12,8 @@
 #include "lwip/sys.h"
 #include "esp_netif.h"
 #include "lwip/ip4_addr.h"
+#include "lwip/inet.h"
+#include <sys/socket.h>
 
 #define TAG "WIFI"
 
@@ -101,6 +103,35 @@ static esp_err_t parse_bssid_string(const char *bssid_str, uint8_t *bssid_arr) {
 esp_err_t wifi_manager_connect(const wifi_config_data_t *config) {
     if (config == NULL || !config->is_valid) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    // 静的IP設定の場合
+    if (config->ip_mode == IP_MODE_STATIC) {
+        esp_netif_ip_info_t ip_info;
+        esp_netif_dns_info_t dns_info;
+
+        // DHCPクライアントを停止
+        ESP_ERROR_CHECK(esp_netif_dhcpc_stop(s_wifi_netif));
+
+        // 静的IP設定
+        inet_pton(AF_INET, config->static_ip, &ip_info.ip);
+        inet_pton(AF_INET, config->static_netmask, &ip_info.netmask);
+        inet_pton(AF_INET, config->static_gateway, &ip_info.gw);
+
+        ESP_ERROR_CHECK(esp_netif_set_ip_info(s_wifi_netif, &ip_info));
+
+        // DNS設定（指定されている場合）
+        if (strlen(config->static_dns) > 0) {
+            inet_pton(AF_INET, config->static_dns, &dns_info.ip);
+            ESP_ERROR_CHECK(esp_netif_set_dns_info(s_wifi_netif, ESP_NETIF_DNS_MAIN, &dns_info));
+        }
+
+        log_info(TAG, "Static IP configured: %s, Netmask: %s, Gateway: %s",
+                 config->static_ip, config->static_netmask, config->static_gateway);
+    } else {
+        // DHCP設定の場合
+        ESP_ERROR_CHECK(esp_netif_dhcpc_start(s_wifi_netif));
+        log_info(TAG, "DHCP client started");
     }
 
     wifi_config_t wifi_config = {
