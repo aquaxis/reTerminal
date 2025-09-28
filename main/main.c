@@ -12,13 +12,9 @@
 #include "config_parser.h"
 #include "wifi_manager.h"
 #include "http_server.h"
+#include "project_config.h"
 
 static const char *TAG = "MAIN";
-
-#define EPAPER_CS_PIN    10
-#define EPAPER_DC_PIN    11
-#define EPAPER_RST_PIN   12
-#define EPAPER_BUSY_PIN  13
 
 void app_main(void)
 {
@@ -28,7 +24,7 @@ void app_main(void)
     log_info(TAG, "ESP32-S3 WiFi Sample Application Starting");
 
     wifi_config_data_t wifi_cfg;
-    char config_buffer[1024] = {0};
+    char config_buffer[CONFIG_BUFFER_SIZE] = {0};
 
     ESP_LOGI(TAG, "reTerminal E1002 e-Paper Application Starting...");
     ESP_LOGI(TAG, "Target: XIAO-ESP32-S3");
@@ -44,14 +40,14 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Free heap: %d bytes", esp_get_free_heap_size());
 
-    // SD_EN(IO16)
-    gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
-    gpio_set_level(GPIO_NUM_16, 1);
+    // SD_EN
+    gpio_set_direction(SD_EN_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_level(SD_EN_PIN, 1);
 
     sdio_init(&sdio_ctx);
 
-    gpio_reset_pin(GPIO_NUM_6);
-    gpio_set_direction(GPIO_NUM_6, GPIO_MODE_OUTPUT);
+    gpio_reset_pin(LED_PIN);
+    gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
 
     // ----------
     // SDIO
@@ -145,7 +141,6 @@ void app_main(void)
     ret = epaper_init(&epaper);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "e-Paper initialization failed");
-        deinit_sd_card();
         return;
     }
 
@@ -171,10 +166,10 @@ void app_main(void)
             log_info(TAG, "WiFi status: %d", status);
         }
 
-        gpio_set_level(GPIO_NUM_6, 1);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        gpio_set_level(LED_PIN, 1);
+        vTaskDelay(LED_BLINK_PERIOD_MS / portTICK_PERIOD_MS);
 
-        gpio_set_level(GPIO_NUM_6, 0);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        gpio_set_level(LED_PIN, 0);
+        vTaskDelay(LED_BLINK_PERIOD_MS / portTICK_PERIOD_MS);
     }
 }

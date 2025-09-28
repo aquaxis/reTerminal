@@ -5,9 +5,7 @@
 #include "esp_err.h"
 #include "bitmap.h"
 #include "epaper_driver.h"
-
-#define MAX_FILE_SIZE (5*1024*1024)
-#define SCRATCH_BUFSIZE 4096
+#include "project_config.h"
 
 esp_err_t handle_file_get(httpd_req_t *req);
 esp_err_t handle_file_post(httpd_req_t *req);

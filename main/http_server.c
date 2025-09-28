@@ -1,5 +1,6 @@
 #include "http_server.h"
 #include "file_handler.h"
+#include "project_config.h"
 #include "esp_log.h"
 #include <string.h>
 
@@ -38,17 +39,17 @@ static esp_err_t register_uri_handlers(void) {
 
 esp_err_t http_server_init(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = 80;
-    config.ctrl_port = 32768;
-    config.max_open_sockets = 5;
-    config.max_uri_handlers = 10;
-    config.max_resp_headers = 8;
-    config.stack_size = 8192;
+    config.server_port = HTTP_SERVER_PORT;
+    config.ctrl_port = HTTP_CTRL_PORT;
+    config.max_open_sockets = MAX_OPEN_SOCKETS;
+    config.max_uri_handlers = MAX_URI_HANDLERS;
+    config.max_resp_headers = MAX_RESP_HEADERS;
+    config.stack_size = HTTP_STACK_SIZE;
     config.uri_match_fn = httpd_uri_match_wildcard;
 
     // Increase timeouts for file uploads
-    config.recv_wait_timeout = 30;  // 30 seconds for receiving data
-    config.send_wait_timeout = 30;  // 30 seconds for sending data
+    config.recv_wait_timeout = RECV_TIMEOUT;
+    config.send_wait_timeout = SEND_TIMEOUT;
 
     ESP_LOGI(TAG, "Starting HTTP server on port %d", config.server_port);
 

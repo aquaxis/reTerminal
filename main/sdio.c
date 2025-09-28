@@ -10,8 +10,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#define MAX_FILE_SIZE 4096
-
 static const char *TAG = "SDIO";
 sdio_context_t sdio_ctx = {.card = NULL, .is_mounted = false};
 static sdmmc_card_t *card = NULL;

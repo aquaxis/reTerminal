@@ -5,19 +5,7 @@
 #include "sdmmc_cmd.h"
 #include <stddef.h>
 #include <stdbool.h>
-
-#define MOUNT_POINT "/sdcard"
-//#define CONFIG_FILE "wifi.cfg"
-#define CONFIG_FILE "config"
-
-#define SD_MISO_PIN  8
-#define SD_MOSI_PIN  9
-#define SD_SCLK_PIN  7
-#define SD_CS_PIN    14
-#define SD_EN_PIN    16
-#define SD_DET_PIN   15
-
-#define SD_SPI_HOST  SPI3_HOST
+#include "project_config.h"
 
 typedef struct {
     sdmmc_card_t *card;
