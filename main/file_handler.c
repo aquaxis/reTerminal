@@ -437,13 +437,6 @@ esp_err_t handle_api_update(httpd_req_t *req) {
         return ESP_FAIL;
     }
 
-    // Clear e-Paper display
-    ESP_LOGI(TAG, "Clearing e-Paper display...");
-    ret = epaper_clear(&epaper, 0x00);
-    if (ret != ESP_OK) {
-        ESP_LOGW(TAG, "e-Paper clear failed, continuing anyway");
-    }
-
     // Display image on e-Paper
     ESP_LOGI(TAG, "Displaying image on e-Paper...");
     ret = epaper_display_frame(&epaper, image.data);
