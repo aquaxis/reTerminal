@@ -110,8 +110,12 @@ esp_err_t wifi_manager_connect(const wifi_config_data_t *config) {
         esp_netif_ip_info_t ip_info;
         esp_netif_dns_info_t dns_info;
 
-        // DHCPクライアントを停止
-        ESP_ERROR_CHECK(esp_netif_dhcpc_stop(s_wifi_netif));
+        // DHCPクライアントを停止（既に停止している場合はエラーを無視）
+        esp_err_t dhcp_ret = esp_netif_dhcpc_stop(s_wifi_netif);
+        if (dhcp_ret != ESP_OK && dhcp_ret != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
+            log_error(TAG, "Failed to stop DHCP client: %s", esp_err_to_name(dhcp_ret));
+            return dhcp_ret;
+        }
 
         // 静的IP設定
         inet_pton(AF_INET, config->static_ip, &ip_info.ip);
@@ -183,13 +187,24 @@ esp_err_t wifi_manager_connect(const wifi_config_data_t *config) {
 }
 
 esp_err_t wifi_manager_disconnect(void) {
-    esp_err_t ret = esp_wifi_disconnect();
-    if (ret != ESP_OK) {
+    esp_err_t ret;
+
+    // WiFi接続を切断
+    ret = esp_wifi_disconnect();
+    if (ret != ESP_OK && ret != ESP_ERR_WIFI_NOT_STARTED) {
         log_error(TAG, "Failed to disconnect: %s", esp_err_to_name(ret));
+    }
+
+    // WiFiを停止
+    ret = esp_wifi_stop();
+    if (ret != ESP_OK && ret != ESP_ERR_WIFI_NOT_STARTED) {
+        log_error(TAG, "Failed to stop WiFi: %s", esp_err_to_name(ret));
         return ret;
     }
 
     s_wifi_status = WIFI_STATUS_DISCONNECTED;
+    s_retry_num = 0;  // リトライカウンタをリセット
+    xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT);  // イベントビットをクリア
     log_info(TAG, "Disconnected from WiFi");
     return ESP_OK;
 }

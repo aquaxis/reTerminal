@@ -19,6 +19,7 @@ static const char *TAG = "MAIN";
 void app_main(void)
 {
     esp_err_t ret;
+    char btn0, btn1, btn2;
 
     logger_init();
     log_info(TAG, "ESP32-S3 WiFi Sample Application Starting");
@@ -48,6 +49,13 @@ void app_main(void)
 
     gpio_reset_pin(LED_PIN);
     gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
+
+    gpio_reset_pin(BTN0_PIN);
+    gpio_set_direction(BTN0_PIN, GPIO_MODE_INPUT);
+    gpio_reset_pin(BTN1_PIN);
+    gpio_set_direction(BTN1_PIN, GPIO_MODE_INPUT);
+    gpio_reset_pin(BTN2_PIN);
+    gpio_set_direction(BTN2_PIN, GPIO_MODE_INPUT);
 
     // ----------
     // SDIO
@@ -166,10 +174,48 @@ void app_main(void)
             log_info(TAG, "WiFi status: %d", status);
         }
 
-        gpio_set_level(LED_PIN, 1);
-        vTaskDelay(LED_BLINK_PERIOD_MS / portTICK_PERIOD_MS);
+        btn0 = gpio_get_level(BTN0_PIN);
+        btn1 = gpio_get_level(BTN1_PIN);
+        btn2 = gpio_get_level(BTN2_PIN);
 
-        gpio_set_level(LED_PIN, 0);
-        vTaskDelay(LED_BLINK_PERIOD_MS / portTICK_PERIOD_MS);
+        if(!btn0){
+
+        }else if(!btn2){
+            // WiFi再接続とIPアドレス再取得
+            ESP_LOGI(TAG, "Button 2 pressed - Reconnecting WiFi...");
+
+            // 既存の接続を切断
+            ret = wifi_manager_disconnect();
+            if (ret != ESP_OK) {
+                log_error(TAG, "Failed to disconnect WiFi");
+            }
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+            // WiFiに再接続
+            ret = wifi_manager_connect(&wifi_cfg);
+            if (ret != ESP_OK) {
+                log_error(TAG, "Failed to reconnect to WiFi");
+            } else {
+                log_info(TAG, "Successfully reconnected to WiFi network: %s", config_get_ssid(&wifi_cfg));
+
+                // IPアドレス情報を取得
+                if (wifi_manager_get_ip_info(ip_str, sizeof(ip_str), netmask_str, sizeof(netmask_str), gateway_str, sizeof(gateway_str)) == ESP_OK) {
+                    log_info(TAG, "IP Address: %s", ip_str);
+                    log_info(TAG, "Netmask: %s", netmask_str);
+                    log_info(TAG, "Gateway: %s", gateway_str);
+                } else {
+                    log_error(TAG, "Failed to retrieve IP information");
+                }
+            }
+
+            vTaskDelay(500 / portTICK_PERIOD_MS); // デバウンス用の遅延
+        }else{
+            gpio_set_level(LED_PIN, 1);
+            vTaskDelay(LED_BLINK_PERIOD_MS / portTICK_PERIOD_MS);
+
+            gpio_set_level(LED_PIN, 0);
+            vTaskDelay(LED_BLINK_PERIOD_MS / portTICK_PERIOD_MS);
+        }
+
     }
 }
